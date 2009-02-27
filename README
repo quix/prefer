@@ -1,0 +1,53 @@
+
+Prefer
+------
+
+Allow conflicting mixins to cooperate in the same program.
+
+  prefer Rails::String => String
+
+Methods defined after this 'prefer' directive will be executed under a
+modified String ancestry.  Rails::String will be the immediate
+ancestor of String, i.e., Rails::String gets first preference on
+method calls.  The previous ancestry is restored when the method
+finishes.
+
+Not thread-safe.  1.8 only.  The 'evil' package is required.
+
+  require 'prefer'
+  
+  module Merb
+    module String
+      def f
+        "Merb::String#f"
+      end
+    end
+  end
+  
+  module Rails
+    module String
+      def f
+        "Rails::String#f"
+      end
+    end
+  end
+  
+  module MerbStuff
+    extend Prefer
+    prefer Merb::String => String
+    def test
+      "".f
+    end
+  end
+  
+  module RailsStuff
+    extend Prefer
+    prefer Rails::String => String
+    def test
+      "".f
+    end
+  end
+  
+  p Object.new.extend(MerbStuff).test    # => "Merb::String#f"
+  p Object.new.extend(RailsStuff).test   # => "Rails::String#f"
+  "".f rescue p "String#f does not exist here"
